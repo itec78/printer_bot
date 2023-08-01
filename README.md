@@ -7,6 +7,7 @@ Currently, you can set a command to print your sticker (by default we used broth
 ## As seen on
 * Furizon Riots & Beyond (2022~2023) https://furizon.net
 * GPN21 (2023) https://entropia.de/GPN21
+* MCH2022 (2022) https://mch2022.org/
 
 **Running it at your con? Add it with a pull request! :D**
 
