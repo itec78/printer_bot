@@ -1,8 +1,8 @@
-# Telegram Printer Bot
+# Telegram Sticker Printer Bot
 
 This Python script implements a Telegram bot that can print images and stickers sent by users. The bot supports resizing images, converting them to grayscale, and applying gamma correction before printing to ensure maximum quality.
 
-Currently, you can set a command to print your sticker (by default we used brother_ql to print to a Brother printer). You can use any external program you want to print to other brands and models of printers.
+Currently, you can set any command to print your sticker (by default brother_ql is used to print). You can use any external program you want to print to other brands and models of printers.
 
 ## As seen on
 * Furizon Riots & Beyond (2022~2023) https://furizon.net
@@ -10,6 +10,10 @@ Currently, you can set a command to print your sticker (by default we used broth
 * MCH2022 (2022) https://mch2022.org/
 
 **Running it at your con? Add it with a pull request! :D**
+
+## Tested printers
+
+* Brother QL-700 / QL-800 / QL-500 (brother_ql)
 
 ## Requirements
 
