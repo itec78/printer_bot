@@ -4,6 +4,12 @@ This Python script implements a Telegram bot that can print images and stickers 
 
 Currently, you can set a command to print your sticker (by default we used brother_ql to print to a Brother printer). You can use any external program you want to print to other brands and models of printers.
 
+## As seen on
+* Furizon Riots & Beyond (2022~2023) https://furizon.net
+* GPN21 (2023) https://entropia.de/GPN21
+
+**Running it at your con? Add it with a pull request! :D**
+
 ## Requirements
 
 * Python 3.6+
@@ -60,13 +66,18 @@ Once the bot is running, it will respond to specific commands:
 
 This project is licensed under the BEER-WARE License.
 
-```/*
+```
+
+/*
  * ----------------------------------------------------------------------------
  * "THE BEER-WARE LICENSE" (Revision 42):
- * <phk@FreeBSD.ORG> wrote this file.  As long as you retain this notice you
+ * foxo (@git.foxo.me) wrote this file.  As long as you retain this notice you
  * can do whatever you want with this stuff. If we meet some day, and you think
- * this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
+ * this stuff is worth it, you can buy me a beer in return.  ~ Foxo
  * ----------------------------------------------------------------------------
- */```
+ */
+
+```
+
 
 **This script is provided as-is, without any warranty or support. Use it at your own risk. The authors are not responsible for any misuse or damage caused by this script.**
