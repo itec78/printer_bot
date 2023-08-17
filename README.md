@@ -8,12 +8,25 @@ Currently, you can set any command to print your sticker (by default brother_ql 
 * Furizon Riots & Beyond (2022~2023) https://furizon.net
 * GPN21 (2023) https://entropia.de/GPN21
 * MCH2022 (2022) https://mch2022.org/
+* Chaos Communication Camp (2023) https://events.ccc.de/camp/
 
 **Running it at your con? Add it with a pull request! :D**
 
 ## Tested printers
 
 * Brother QL-700 / QL-800 / QL-500 (brother_ql)
+
+## Recommended label rolls
+
+It is important to use "continuous" rolls when using Brother printers, aka ones which are not precut and have an endless roll of thermal paper. Although you can also use smaller sizes, 62mm wide rolls are suggested.
+
+There are a variety of label rolls you can buy:
+* DK-44205, DK-22205: paper, black on white
+* DK-44605: paper, black on yellow
+* DK-22606: plastic film, black on yellow
+* DK-22113: plastic film, black on transparent
+
+Be careful of models that don't feature glue! Make sure whatever you buy is a label and not just a roll :)
 
 ## Requirements
 
