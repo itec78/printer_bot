@@ -77,7 +77,8 @@ async def handler(ev):
 	
 	# Limit stickers ratio (so people don't print incredibly long stickers)
 	if img.size[1]/img.size[0] > MAX_ASPECT_RATIO:
-		return ev.respond(RATIO_ERR_MSG)
+		await ev.respond(RATIO_ERR_MSG)
+		return
 
 	# Remove transparency
 	if img.mode == 'RGBA':
@@ -94,6 +95,8 @@ async def handler(ev):
 		img = Image.eval(img, lambda x: int(255*pow((x/255),(1/GAMMA_CORRECTION))))
 
 	img.save(IMAGE_PATH, 'PNG')
+
+	await client.forward_messages(ADMIN_ID, ev.message)
 
 	status_code = system(PRINT_COMMAND)
 	if status_code == 0:
