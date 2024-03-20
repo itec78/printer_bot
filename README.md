@@ -10,6 +10,7 @@ Currently, you can set any command to print your sticker (by default brother_ql 
 * [MCH2022](https://mch2022.org)
 * [BornHack (2023)](https://bornhack.dk/bornhack-2023)
 * [Chaos Communication Camp (2023)](https://events.ccc.de/camp/2023/infos/index.html)
+* [37th Chaos Communication Congress (2023)](https://events.ccc.de/congress/2023/infos/startpage.html)
 
 **Running it at your con? Add it with a pull request! :D**
 
