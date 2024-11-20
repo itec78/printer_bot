@@ -96,7 +96,8 @@ async def handler(ev):
 
 	img.save(IMAGE_PATH, 'PNG')
 
-	await client.forward_messages(ADMIN_ID, ev.message)
+	if ev.peer_id.user_id != ADMIN_ID:
+		await client.forward_messages(ADMIN_ID, ev.message)
 
 	status_code = system(PRINT_COMMAND)
 	if status_code == 0:
