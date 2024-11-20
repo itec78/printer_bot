@@ -1,8 +1,6 @@
-from telethon import TelegramClient
-import logging, asyncio
-from telethon.tl.types import MessageMediaDocument, DocumentAttributeSticker, DocumentAttributeAnimated, MessageMediaPhoto
-from telethon import events
-from telethon.tl.custom import Button
+from telegram import Update
+from telegram.ext import Application, ContextTypes, CommandHandler, MessageHandler, filters
+import logging
 from os import system
 from time import time
 from PIL import Image
@@ -10,9 +8,7 @@ from config import *
 import os
 
 logging.basicConfig(level=logging.INFO)
-
-client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
-client.flood_sleep_threshold = 120
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 CACHE_DIR = os.path.join(SCRIPT_DIR,"cache")
@@ -20,67 +16,69 @@ PRINT_DIR = os.path.join(SCRIPT_DIR,"print")
 
 print_log = {}
 
-@client.on(events.NewMessage(pattern='^/id'))
-async def debug_id(ev):
-	await ev.respond(f"Hello! Your id is `{ev.peer_id.user_id}` please add it to the ADMIN_ID to give youself privileges :)")
+async def debug_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+	await update.message.reply_text(f"Hello! Your id is `{update.message.from_user.id}` please add it to the ADMIN_ID to give youself privileges :)")
 
-@client.on(events.NewMessage(pattern='^/start'))
-async def welcome(ev):
-	await ev.respond(WELCOME_MSG)
-	if (ev.peer_id.user_id not in print_log) and PASSWORD:
-		await ev.respond(UNLOCK_MSG)
+async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+	msg = update.message
+	await msg.reply_text(WELCOME_MSG)
+	if PASSWORD:
+		if (msg.from_user.id not in print_log):
+			await msg.reply_text(UNLOCK_MSG)
+			return
 
-# This one triggers on a single message with the pin code written
-@client.on(events.NewMessage(pattern=PASSWORD, func=lambda e: e.is_private))
-async def unlock_printer(ev):
-	if ev.peer_id.user_id not in print_log:
-		print_log[ev.peer_id.user_id] = 0
-		if PASSWORD:
-			await ev.respond(UNLOCKED_MSG)
+async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+	msg = update.message
 
-@client.on(events.NewMessage(incoming=True, func=lambda e: e.is_private and e.message.media))
-async def handler(ev):
-
-	msg = ev.message
-	if ev.peer_id.user_id not in print_log:
-		await ev.respond(UNLOCK_MSG)
+	if PASSWORD:
+		# This one triggers on a single message with the pin code written
+		if msg.text:
+			if msg.text.strip().lower() == PASSWORD.lower():
+				if msg.from_user.id not in print_log:
+					print_log[msg.from_user.id] = 0
+					await msg.reply_text(UNLOCKED_MSG)
+					return
+		
+		# Check for password
+		if (msg.from_user.id not in print_log):
+			await msg.reply_text(UNLOCK_MSG)
+			return
 
 	# Check if the file is valid
 	if msg.photo:
-		fn = os.path.join(CACHE_DIR, f"{msg.photo.id}.jpg")
+		fid = msg.photo[-1].file_id
+		fn = os.path.join(CACHE_DIR, f"{fid}.jpg")
 	elif msg.sticker:
-		fn = os.path.join(CACHE_DIR, f"{msg.sticker.id}.webp")
-		for att in msg.sticker.attributes:
-			if isinstance(att, DocumentAttributeAnimated):
-				fn = None
-				break
+		fid = msg.sticker.file_id
+		fn = os.path.join(CACHE_DIR, f"{fid}.webp")
 	else:
 		fn = None
-		
+
 	if not fn:
-		await ev.respond(FORMAT_ERR_MSG)
+		await msg.reply_text(FORMAT_ERR_MSG)
 		return
 	
 	# Check if the user is still in the cooldown period
-	time_left = int((print_log[ev.peer_id.user_id] + BASE_COOLDOWN) - time())
+	time_left = int((print_log.get(msg.from_user.id, 0) + BASE_COOLDOWN) - time())
 	if time_left > 0:
-		await ev.respond(RATELIMIT_MSG.format(time_left=time_left))
+		await msg.reply_text(RATELIMIT_MSG.format(time_left=time_left))
 		return
 
 	# Download the file unless it's in the cache!		
 	if not os.path.isfile(fn):
-		await client.download_media(msg, file=fn)
+		new_file = await context.bot.get_file(fid)
+		await new_file.download_to_drive(fn)
 	
 	# Try opening the image, at least
 	try:
 		img = Image.open(fn)
 	except:
-		await ev.respond(FORMAT_ERR_MSG)
+		await msg.reply_text(FORMAT_ERR_MSG)
 		return
 	
 	# Limit stickers ratio (so people don't print incredibly long stickers)
 	if img.size[1]/img.size[0] > MAX_ASPECT_RATIO:
-		await ev.respond(RATIO_ERR_MSG)
+		await msg.reply_text(RATIO_ERR_MSG)
 		return
 
 	# Remove transparency
@@ -100,16 +98,16 @@ async def handler(ev):
 	IMAGE_PATH = os.path.join(PRINT_DIR, os.path.basename(fn) + ".png")
 	img.save(IMAGE_PATH, 'PNG')
 
-	if ev.peer_id.user_id != ADMIN_ID:
-		await client.forward_messages(ADMIN_ID, ev.message)
+	if msg.from_user.id != ADMIN_ID:
+		await update.message.forward(ADMIN_ID)
 
 	status_code = os.system(PRINT_COMMAND.format(IMAGE_PATH=IMAGE_PATH))
 	if status_code == 0:
-		print_log[ev.peer_id.user_id] = time()
-		await ev.respond(PRINT_SUCCESS_MSG)
+		print_log[msg.from_user.id] = time()
+		await msg.reply_text(PRINT_SUCCESS_MSG)
 	else:
-		await ev.respond(PRINT_FAIL_MSG)
-		await client.send_message(ADMIN_ID, f'Printer is not working. Process returned status code {status_code}')
+		await msg.reply_text(PRINT_FAIL_MSG)
+		await application.bot.send_message(ADMIN_ID, f'Printer is not working. Process returned status code {status_code}')
 	
 	if PRINT_SUCCESS_COMMAND:
 		os.system(PRINT_SUCCESS_COMMAND)
@@ -118,4 +116,8 @@ if __name__ == '__main__':
 	os.makedirs(CACHE_DIR, exist_ok=True)
 	os.makedirs(PRINT_DIR, exist_ok=True)
 
-	client.run_until_disconnected()
+	application = Application.builder().token(BOT_TOKEN).build()
+	application.add_handler(CommandHandler("start", welcome))
+	application.add_handler(CommandHandler("id", debug_id))
+	application.add_handler(MessageHandler(filters.ALL, handler))
+	application.run_polling()

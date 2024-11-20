@@ -1,9 +1,4 @@
 
-# To get an API_ID and API_HASH, you need to sign up to be a Telegram Dev.
-# Do it here: https://core.telegram.org/api/obtaining_api_id
-API_ID = 11111
-API_HASH = '5d41402abc4b2a76b9719d911017c592'
-
 # Get a bot token from Telegram by creating a bot with @BotFather
 BOT_TOKEN = '1222222222:b2YgZXdvaWZld29maHdlb2lmaA'
 
