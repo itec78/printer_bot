@@ -162,3 +162,5 @@ cython_debug/
 config.py
 *.session
 *.session-*
+cache/
+print/

@@ -22,12 +22,8 @@ BASE_COOLDOWN = 10 # Seconds between stickers printing
 MAX_ASPECT_RATIO = 1.5 # Maximum ratio between height/width of sticker
 ADMIN_ID = 111111 # Find your own id with the /id command
 
-# Folder settings
-IMAGE_PATH = '/tmp/image.png'
-CACHE_DIR = '/tmp/printercache'
-
 # Remember to add your user to the "lp" group or this won't work!
-PRINT_COMMAND = f"brother_ql -m QL-700 -b linux_kernel -p file:///dev/usb/lp0 print -l 62 {IMAGE_PATH} -d"
+PRINT_COMMAND = "brother_ql -m QL-700 -b linux_kernel -p file:///dev/usb/lp0 print -l 62 [IMAGE_PATH] -d"
 PRINT_SUCCESS_COMMAND = None # "mpv --no-video success.wav" - this was used to play audio
 
 # Resize and process settings

@@ -3,17 +3,20 @@ import logging, asyncio
 from telethon.tl.types import MessageMediaDocument, DocumentAttributeSticker, DocumentAttributeAnimated, MessageMediaPhoto
 from telethon import events
 from telethon.tl.custom import Button
-from os.path import isfile, join
 from os import system
 from time import time
 from PIL import Image
 from config import *
-from os import makedirs
+import os
 
 logging.basicConfig(level=logging.INFO)
 
 client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 client.flood_sleep_threshold = 120
+
+SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
+CACHE_DIR = os.path.join(SCRIPT_DIR,"cache")
+PRINT_DIR = os.path.join(SCRIPT_DIR,"print")
 
 print_log = {}
 
@@ -44,9 +47,9 @@ async def handler(ev):
 
 	# Check if the file is valid
 	if msg.photo:
-		fn = join(CACHE_DIR, f"{msg.photo.id}.jpg")
+		fn = os.path.join(CACHE_DIR, f"{msg.photo.id}.jpg")
 	elif msg.sticker:
-		fn = join(CACHE_DIR, f"{msg.sticker.id}.webp")
+		fn = os.path.join(CACHE_DIR, f"{msg.sticker.id}.webp")
 		for att in msg.sticker.attributes:
 			if isinstance(att, DocumentAttributeAnimated):
 				fn = None
@@ -65,7 +68,7 @@ async def handler(ev):
 		return
 
 	# Download the file unless it's in the cache!		
-	if not isfile(fn):
+	if not os.path.isfile(fn):
 		await client.download_media(msg, file=fn)
 	
 	# Try opening the image, at least
@@ -94,12 +97,13 @@ async def handler(ev):
 	if GAMMA_CORRECTION != 1:
 		img = Image.eval(img, lambda x: int(255*pow((x/255),(1/GAMMA_CORRECTION))))
 
+	IMAGE_PATH = os.path.join(PRINT_DIR, os.path.basename(fn) + ".png")
 	img.save(IMAGE_PATH, 'PNG')
 
 	if ev.peer_id.user_id != ADMIN_ID:
 		await client.forward_messages(ADMIN_ID, ev.message)
 
-	status_code = system(PRINT_COMMAND)
+	status_code = os.system(PRINT_COMMAND.format(IMAGE_PATH=IMAGE_PATH))
 	if status_code == 0:
 		print_log[ev.peer_id.user_id] = time()
 		await ev.respond(PRINT_SUCCESS_MSG)
@@ -108,8 +112,10 @@ async def handler(ev):
 		await client.send_message(ADMIN_ID, f'Printer is not working. Process returned status code {status_code}')
 	
 	if PRINT_SUCCESS_COMMAND:
-		system(PRINT_SUCCESS_COMMAND)
+		os.system(PRINT_SUCCESS_COMMAND)
 
 if __name__ == '__main__':
-	makedirs(CACHE_DIR, exist_ok=True)
+	os.makedirs(CACHE_DIR, exist_ok=True)
+	os.makedirs(PRINT_DIR, exist_ok=True)
+
 	client.run_until_disconnected()
