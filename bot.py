@@ -81,6 +81,11 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 		await msg.reply_text(RATIO_ERR_MSG)
 		return
 
+	# Automatically rotate
+	if AUTO_ROTATE:
+		if img.size[0] > img.size[1] and not img.size[1]/img.size[0] > MAX_ASPECT_RATIO:
+			img = img.rotate(90, expand=True)
+
 	# Remove transparency
 	if img.mode == 'RGBA':
 		bg_img = Image.new(img.mode, img.size, BACKGROUND_COLOR)

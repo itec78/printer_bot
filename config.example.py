@@ -26,3 +26,4 @@ WIDTH_PX = 696
 HEIGHT_PX = 9999 # This means "do not care about height"
 GAMMA_CORRECTION = 1.8
 BACKGROUND_COLOR = 'white'
+AUTO_ROTATE = True
