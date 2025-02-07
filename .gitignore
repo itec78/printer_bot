@@ -164,3 +164,4 @@ config.py
 *.session-*
 cache/
 print/
+limit.json

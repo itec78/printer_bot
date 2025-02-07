@@ -6,6 +6,8 @@ from time import time
 from PIL import Image
 from config import *
 import os
+import json
+from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -15,6 +17,14 @@ CACHE_DIR = os.path.join(SCRIPT_DIR,"cache")
 PRINT_DIR = os.path.join(SCRIPT_DIR,"print")
 
 print_log = {}
+
+limitdict = {}
+limit = {int(i.split("/")[1]): int(i.split("/")[0]) for i in AMOUNT_LIMIT.replace(" ","").split(",")}
+limitfile = os.path.join(os.path.realpath(os.path.dirname(__file__)), "limit.json")
+
+if os.path.isfile(limitfile):
+	with open(limitfile, "r") as f: 
+		limitdict = json.load(f)
 
 async def debug_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 	await update.message.reply_text(f"Hello! Your id is `{update.message.from_user.id}` please add it to the ADMIN_ID to give youself privileges :)")
@@ -59,10 +69,18 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 		return
 	
 	# Check if the user is still in the cooldown period
-	time_left = int((print_log.get(msg.from_user.id, 0) + BASE_COOLDOWN) - time())
-	if time_left > 0:
-		await msg.reply_text(RATELIMIT_MSG.format(time_left=time_left))
-		return
+	if msg.from_user.id != ADMIN_ID:
+		l = list(sorted(limitdict.get(str(msg.from_user.id),[]),reverse=True))
+		# print(l)
+		for t in sorted([int(x) for x in limit.keys()], reverse=True):
+			n = limit[t]
+			# print(n,t)
+			if len(l)>=n:
+				dt = (datetime.now() - datetime.fromisoformat(l[n-1])).seconds - t
+				# print(dt)
+				if dt < 0:
+					await msg.reply_text(RATELIMIT_MSG.format(time_left=str(timedelta(seconds=-dt))))
+					return
 
 	# Download the file unless it's in the cache!		
 	if not os.path.isfile(fn):
@@ -109,6 +127,18 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 	status_code = os.system(PRINT_COMMAND.format(IMAGE_PATH=IMAGE_PATH))
 	if status_code == 0:
 		print_log[msg.from_user.id] = time()
+		
+		#add
+		if not str(msg.from_user.id) in limitdict:
+			limitdict[str(msg.from_user.id)] = []
+		limitdict[str(msg.from_user.id)].append(datetime.now().isoformat())
+        #clean
+		maxn = max([int(x) for x in limit.values()])
+		limitdict[str(msg.from_user.id)] = limitdict[str(msg.from_user.id)][-maxn:]
+		#save
+		with open(limitfile, "w") as f: 
+			json.dump(limitdict, f, indent=2)
+
 		await msg.reply_text(PRINT_SUCCESS_MSG)
 	else:
 		await msg.reply_text(PRINT_FAIL_MSG)
