@@ -167,7 +167,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 	# Automatically rotate
 	if AUTO_ROTATE:
-		if img.size[0] > img.size[1] and not img.size[1]/img.size[0] > MAX_ASPECT_RATIO:
+		if img.size[0] > img.size[1] and not img.size[0]/img.size[1] > MAX_ASPECT_RATIO:
 			img = img.rotate(90, expand=True)
 
 	# Remove transparency
