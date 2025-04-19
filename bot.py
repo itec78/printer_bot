@@ -3,7 +3,7 @@ from telegram.ext import Application, ContextTypes, CommandHandler, MessageHandl
 import logging
 from os import system
 from time import time
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw, ImageOps
 from config import *
 import os
 import json
@@ -15,6 +15,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 CACHE_DIR = os.path.join(SCRIPT_DIR,"cache")
 PRINT_DIR = os.path.join(SCRIPT_DIR,"print")
+EXTRA_DIR = os.path.join(SCRIPT_DIR,"extra")
 
 print_log = {}
 
@@ -55,19 +56,43 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 			return
 
 	# Check if the file is valid
+	fn = None
+	imgcmd = None
+	msgtext = ""
+
 	if msg.photo:
 		fid = msg.photo[-1].file_id
 		fn = os.path.join(CACHE_DIR, f"{fid}.jpg")
 	elif msg.sticker:
 		fid = msg.sticker.file_id
 		fn = os.path.join(CACHE_DIR, f"{fid}.webp")
-	else:
-		fn = None
+	
 
-	if not fn:
+	msgt = msg.text or msg.caption
+	if msgt:
+		msgl = msgt.strip().split(" ", 1)
+		msgcmd = msgl[0].lower()
+		msgtext = "" if len(msgl)<=1 else msgl[1] 
+
+		if msgcmd in ["invert","inverti"]:
+			imgcmd = "invert"
+			if not fn:	
+				await msg.reply_text("Invert: no image")
+				return
+		
+		elif msgcmd in ["name","nome"]:
+			imgcmd = "name"
+			if msgtext == "":
+				await msg.reply_text("Name: text missing")
+				return
+
+
+	if not fn and not imgcmd:
 		await msg.reply_text(FORMAT_ERR_MSG)
 		return
 	
+
+
 	# Check if the user is still in the cooldown period
 	if msg.from_user.id != ADMIN_ID:
 		l = list(sorted(limitdict.get(str(msg.from_user.id),[]),reverse=True))
@@ -82,18 +107,59 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 					await msg.reply_text(RATELIMIT_MSG.format(time_left=str(timedelta(seconds=-dt))))
 					return
 
-	# Download the file unless it's in the cache!		
-	if not os.path.isfile(fn):
-		new_file = await context.bot.get_file(fid)
-		await new_file.download_to_drive(fn)
-	
-	# Try opening the image, at least
-	try:
-		img = Image.open(fn)
-	except:
-		await msg.reply_text(FORMAT_ERR_MSG)
-		return
-	
+
+
+
+	if fn:
+		# Download the file unless it's in the cache!		
+		if not os.path.isfile(fn):
+			new_file = await context.bot.get_file(fid)
+			await new_file.download_to_drive(fn)
+		
+		# Try opening the image, at least
+		try:
+			img = Image.open(fn)
+		except:
+			await msg.reply_text(FORMAT_ERR_MSG)
+			return
+
+
+
+	if imgcmd:
+
+		if imgcmd == "invert":
+			img = ImageOps.invert(img)
+
+		elif imgcmd == "name":
+			margin = 50
+			size = 500 # Font size
+			img = Image.open(os.path.join(EXTRA_DIR,"Hello_my_name_is_sticker.png")).convert("RGBA")
+
+			width, height = img.size 
+			while size > 20:
+				font = ImageFont.load_default(size)
+				textwidth = font.getlength(msgtext)
+				if textwidth <= width-(margin*2):
+					break
+				else:
+					size -= 5
+			x = (width-textwidth)//2
+			# print(size, width, textwidth, x)
+
+			ImageDraw.Draw(img).multiline_text((width/2, height/2 + 100), msgtext, (0,0,0), font=font, anchor="mm", align='center')
+			fn = os.path.join(CACHE_DIR, f"name_{' '.join(msgtext.splitlines())}.png".replace(" ","_"))
+			img.save(fn)
+
+
+
+
+
+
+
+
+
+	#Time to print!
+
 	# Limit stickers ratio (so people don't print incredibly long stickers)
 	if img.size[1]/img.size[0] > MAX_ASPECT_RATIO:
 		await msg.reply_text(RATIO_ERR_MSG)
