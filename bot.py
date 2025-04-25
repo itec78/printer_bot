@@ -8,6 +8,8 @@ from config import *
 import os
 import json
 from datetime import datetime, timedelta
+import qrcode
+import hashlib
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -83,9 +85,26 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 		elif msgcmd in ["name","nome"]:
 			imgcmd = "name"
 			if msgtext == "":
-				await msg.reply_text("Name: text missing")
+				await msg.reply_text("Text missing")
 				return
 
+		elif msgcmd in ["text","testo"]:
+			imgcmd = "text"
+			if msgtext == "":
+				await msg.reply_text("Text missing")
+				return
+		
+		elif msgcmd in ["qr","qrcode"]:
+			imgcmd = "qr"
+			if msgtext == "":
+				await msg.reply_text("Text missing")
+				return
+
+		elif msgcmd in ["police","polizia"]:
+			imgcmd = "police"
+			if msgtext == "":
+				await msg.reply_text("Text missing")
+				return
 
 	if not fn and not imgcmd:
 		await msg.reply_text(FORMAT_ERR_MSG)
@@ -147,12 +166,82 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 			# print(size, width, textwidth, x)
 
 			ImageDraw.Draw(img).multiline_text((width/2, height/2 + 100), msgtext, (0,0,0), font=font, anchor="mm", align='center')
-			fn = os.path.join(CACHE_DIR, f"name_{' '.join(msgtext.splitlines())}.png".replace(" ","_"))
-			img.save(fn)
+	
+		elif imgcmd == "text":
+			margin = 50
+			ratio = MAX_ASPECT_RATIO
+
+			img = Image.new(size=(100, 100), mode='RGB', color='white')
+			font = ImageFont.load_default(400)
+
+			x, y, w, h = ImageDraw.Draw(img).multiline_textbbox((0, 0), msgtext, font=font, align='center')
+
+			# calc size with margin
+			nw = int(w - x + (margin * 2))
+			nh = int(h - y + (margin * 2))
+			nx = int(margin - x)
+			ny = int(margin - y)
+
+			#calc size with ratio
+			if nw / nh > ratio:
+				nnh = int(nw / ratio)
+				ny = ny + int((nnh - nh) / 2)
+				nh = nnh
+
+			#draw text
+			img = img.resize((nw, nh))
+			ImageDraw.Draw(img).multiline_text((nx, ny), msgtext, font=font, fill="black", align='center')
+
+		elif imgcmd == "qr":
+			qr = qrcode.QRCode(
+				error_correction=qrcode.constants.ERROR_CORRECT_H,
+				box_size=50,
+				border=2
+			)
+			qr.add_data(msgtext)
+			qr.make()
+			img = qr.make_image()
+
+		elif imgcmd == "police":
+			margin = 50
+			ratio = MAX_ASPECT_RATIO
+
+			img = Image.new(size=(100, 100), mode='RGB', color='white')
+			font = ImageFont.truetype(os.path.join(EXTRA_DIR,"Roboto-Bold.ttf"), 400)
+
+			x, y, w, h = ImageDraw.Draw(img).multiline_textbbox((0, 0), msgtext.upper(), font=font, align='center')
+
+			# calc size with margin
+			nw = int(w - x + (margin * 2))
+			nh = int(h - y + (margin * 2))
+			nx = int(margin - x)
+			ny = int(margin - y)
+
+			#calc size with ratio
+			if nw / nh > ratio:
+				nnh = int(nw / ratio)
+				ny = ny + int((nnh - nh) / 2)
+				nh = nnh
+				
+			#draw text
+			img = img.resize((nw, nh))
+			ImageDraw.Draw(img).multiline_text((nx, ny), msgtext.upper(), font=font, fill="black", align='center')
+
+			#crop and invert
+			inv = ImageOps.invert(img.crop((0, int(nh / 2), nw, nh)))
+			img.paste(inv, (0, int(nh / 2)))
+
+			#replace color
+			pixels = list(img.getdata())
+			new_color = (99, 151, 208)  
+			modified_pixels = [new_color if pixel <= (127, 127, 127) else pixel for pixel in pixels]
+			img.putdata(modified_pixels)
 
 
-
-
+		if not fn:
+			fn = os.path.join(CACHE_DIR, f"{imgcmd}_{hashlib.md5(msgtext.encode()).hexdigest()}.png")
+			img.save(fn, 'PNG')
+			await msg.reply_photo(fn)
 
 
 
@@ -167,7 +256,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 	# Automatically rotate
 	if AUTO_ROTATE:
-		if img.size[0] > img.size[1] and not img.size[0]/img.size[1] > MAX_ASPECT_RATIO:
+		if img.size[0] > img.size[1] and not round(img.size[0]/img.size[1], 2) > MAX_ASPECT_RATIO:
 			img = img.rotate(90, expand=True)
 
 	# Remove transparency
@@ -184,7 +273,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 	if GAMMA_CORRECTION != 1:
 		img = Image.eval(img, lambda x: int(255*pow((x/255),(1/GAMMA_CORRECTION))))
 
-	IMAGE_PATH = os.path.join(PRINT_DIR, os.path.basename(fn) + ".png")
+	IMAGE_PATH = os.path.join(PRINT_DIR, os.path.splitext(os.path.basename(fn))[0] + ".png")
 	img.save(IMAGE_PATH, 'PNG')
 
 	if msg.from_user.id != ADMIN_ID:
