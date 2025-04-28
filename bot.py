@@ -189,7 +189,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 				nh = nnh
 
 			#draw text
-			img = img.resize((nw, nh))
+			img = Image.new(size=(nw, nh), mode='RGB', color='white')
 			ImageDraw.Draw(img).multiline_text((nx, ny), msgtext, font=font, fill="black", align='center')
 
 		elif imgcmd == "qr":
@@ -206,10 +206,10 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 			margin = 50
 			ratio = MAX_ASPECT_RATIO
 
-			img = Image.new(size=(100, 100), mode='RGB', color='white')
+			alpha = Image.new('L', (100, 100), 0)
 			font = ImageFont.truetype(os.path.join(EXTRA_DIR,"Roboto-Bold.ttf"), 400)
 
-			x, y, w, h = ImageDraw.Draw(img).multiline_textbbox((0, 0), msgtext.upper(), font=font, align='center')
+			x, y, w, h = ImageDraw.Draw(alpha).multiline_textbbox((0, 0), msgtext.upper(), font=font, align='center')
 
 			# calc size with margin
 			nw = int(w - x + (margin * 2))
@@ -224,18 +224,20 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 				nh = nnh
 				
 			#draw text
-			img = img.resize((nw, nh))
-			ImageDraw.Draw(img).multiline_text((nx, ny), msgtext.upper(), font=font, fill="black", align='center')
+			alpha = Image.new('L', (nw, nh), 0)
+			ImageDraw.Draw(alpha).multiline_text((nx, ny), msgtext.upper(), font=font, fill="white", align='center')
 
 			#crop and invert
-			inv = ImageOps.invert(img.crop((0, int(nh / 2), nw, nh)))
-			img.paste(inv, (0, int(nh / 2)))
+			inv = ImageOps.invert(alpha.crop((0, int(nh / 2), nw, nh)))
+			alpha.paste(inv, (0, int(nh / 2)))
 
-			#replace color
-			pixels = list(img.getdata())
-			new_color = (99, 151, 208)  
-			modified_pixels = [new_color if pixel <= (127, 127, 127) else pixel for pixel in pixels]
-			img.putdata(modified_pixels)
+			#apply alpha channel
+			img = Image.new('RGBA', (nw, nh), (99, 151, 208))
+			img.putalpha(alpha)
+
+			#white background
+			white_bg = Image.new("RGBA", img.size, "white")
+			img = Image.alpha_composite(white_bg, img)
 
 
 		if not fn:
