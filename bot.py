@@ -205,11 +205,12 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 		elif imgcmd == "police":
 			margin = 50
 			ratio = MAX_ASPECT_RATIO
+			msgtext = msgtext.upper()
 
 			alpha = Image.new('L', (100, 100), 0)
 			font = ImageFont.truetype(os.path.join(EXTRA_DIR,"Roboto-Bold.ttf"), 400)
 
-			x, y, w, h = ImageDraw.Draw(alpha).multiline_textbbox((0, 0), msgtext.upper(), font=font, align='center')
+			x, y, w, h = ImageDraw.Draw(alpha).multiline_textbbox((0, 0), msgtext, font=font, align='center')
 
 			# calc size with margin
 			nw = int(w - x + (margin * 2))
@@ -225,7 +226,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 				
 			#draw text
 			alpha = Image.new('L', (nw, nh), 0)
-			ImageDraw.Draw(alpha).multiline_text((nx, ny), msgtext.upper(), font=font, fill="white", align='center')
+			ImageDraw.Draw(alpha).multiline_text((nx, ny), msgtext, font=font, fill="white", align='center')
 
 			#crop and invert
 			inv = ImageOps.invert(alpha.crop((0, int(nh / 2), nw, nh)))
@@ -239,9 +240,9 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 			white_bg = Image.new("RGBA", img.size, "white")
 			img = Image.alpha_composite(white_bg, img)
 
-
 		if not fn:
 			fn = os.path.join(CACHE_DIR, f"{imgcmd}_{hashlib.md5(msgtext.encode()).hexdigest()}.png")
+			img.thumbnail([2560, 2560])
 			img.save(fn, 'PNG')
 			await msg.reply_photo(fn)
 
