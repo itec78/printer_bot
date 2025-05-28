@@ -17,6 +17,10 @@ MAX_ASPECT_RATIO = 1.5 # Maximum ratio between height/width of sticker
 ADMIN_ID = 111111 # Find your own id with the /id command
 AMOUNT_LIMIT = '3/60, 10/600, 20/3600'
 
+# Privacy
+KEEP_FILES = False # Keep files after print
+ADMIN_FORWARD = True # Forward media to Admin
+
 # Remember to add your user to the "lp" group or this won't work!
 PRINT_COMMAND = "brother_ql -m QL-700 -b linux_kernel -p file:///dev/usb/lp0 print -l 62 [IMAGE_PATH] -d"
 PRINT_SUCCESS_COMMAND = None # "mpv --no-video success.wav" - this was used to play audio

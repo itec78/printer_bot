@@ -10,6 +10,7 @@ import json
 from datetime import datetime, timedelta
 import qrcode
 import hashlib
+import shutil
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -279,7 +280,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 	IMAGE_PATH = os.path.join(PRINT_DIR, os.path.splitext(os.path.basename(fn))[0] + ".png")
 	img.save(IMAGE_PATH, 'PNG')
 
-	if msg.from_user.id != ADMIN_ID:
+	if ADMIN_FORWARD and msg.from_user.id != ADMIN_ID:
 		await update.message.forward(ADMIN_ID)
 
 	status_code = os.system(PRINT_COMMAND.format(IMAGE_PATH=IMAGE_PATH))
@@ -305,7 +306,22 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 	if PRINT_SUCCESS_COMMAND:
 		os.system(PRINT_SUCCESS_COMMAND)
 
+	# delete files
+	if not KEEP_FILES:
+		try:
+			os.remove(fn)
+			os.remove(IMAGE_PATH)
+		except OSError:
+			pass
+
+
+
 if __name__ == '__main__':
+	
+	if not KEEP_FILES:
+		shutil.rmtree(CACHE_DIR, ignore_errors=True)
+		shutil.rmtree(PRINT_DIR, ignore_errors=True)
+
 	os.makedirs(CACHE_DIR, exist_ok=True)
 	os.makedirs(PRINT_DIR, exist_ok=True)
 
