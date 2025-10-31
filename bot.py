@@ -173,10 +173,14 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 			ratio = MAX_ASPECT_RATIO
 
 			img = Image.new(size=(100, 100), mode='RGB', color='white')
-			font = ImageFont.load_default(400)
-
-			x, y, w, h = ImageDraw.Draw(img).multiline_textbbox((0, 0), msgtext, font=font, align='center')
-
+			size = 1
+			while True:
+				font = ImageFont.load_default(size)
+				x, y, w, h = ImageDraw.Draw(img).multiline_textbbox((0, 0), msgtext, font=font, align='center')
+				if w > 2560 or h > 2560:
+					break
+				size += int(size * 0.2 + 1)
+			
 			# calc size with margin
 			nw = int(w - x + (margin * 2))
 			nh = int(h - y + (margin * 2))
@@ -209,11 +213,15 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 			msgtext = msgtext.upper()
 
 			alpha = Image.new('L', (100, 100), 0)
-			font = ImageFont.truetype(os.path.join(EXTRA_DIR,"Roboto-Bold.ttf"), 400)
+			size = 1
+			while True:
+				font = ImageFont.truetype(os.path.join(EXTRA_DIR,"Roboto-Bold.ttf"), size)
+				x, y, w, h = ImageDraw.Draw(alpha).multiline_textbbox((0, 0), msgtext, font=font, align='center')
+				if w > 2560 or h > 2560:
+					break
+				size += int(size * 0.2 + 1)
 
-			x, y, w, h = ImageDraw.Draw(alpha).multiline_textbbox((0, 0), msgtext, font=font, align='center')
-
-			# calc size with margin
+			# calc size with marginwj2
 			nw = int(w - x + (margin * 2))
 			nh = int(h - y + (margin * 2))
 			nx = int(margin - x)
