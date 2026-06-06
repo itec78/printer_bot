@@ -157,7 +157,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 			width, height = img.size 
 			while size > 20:
-				font = ImageFont.load_default(size)
+				font = ImageFont.truetype('arial.ttf', size)
 				textwidth = font.getlength(msgtext)
 				if textwidth <= width-(margin*2):
 					break
@@ -175,7 +175,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 			img = Image.new(size=(100, 100), mode='RGB', color='white')
 			size = 1
 			while True:
-				font = ImageFont.load_default(size)
+				font = ImageFont.truetype('arial.ttf', size)
 				x, y, w, h = ImageDraw.Draw(img).multiline_textbbox((0, 0), msgtext, font=font, align='center')
 				if w > 2560 or h > 2560:
 					break
