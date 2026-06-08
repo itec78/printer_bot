@@ -157,7 +157,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 			width, height = img.size 
 			while size > 20:
-				font = ImageFont.truetype('arial.ttf', size)
+				font = ImageFont.truetype(os.path.join(EXTRA_DIR,"DejaVuSans_NotoEmoji-Regular.ttf"), size)
 				textwidth = font.getlength(msgtext)
 				if textwidth <= width-(margin*2):
 					break
@@ -175,7 +175,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 			img = Image.new(size=(100, 100), mode='RGB', color='white')
 			size = 1
 			while True:
-				font = ImageFont.truetype('arial.ttf', size)
+				font = ImageFont.truetype(os.path.join(EXTRA_DIR,"DejaVuSans_NotoEmoji-Regular.ttf"), size)
 				x, y, w, h = ImageDraw.Draw(img).multiline_textbbox((0, 0), msgtext, font=font, align='center')
 				if w > 2560 or h > 2560:
 					break
@@ -215,7 +215,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 			alpha = Image.new('L', (100, 100), 0)
 			size = 1
 			while True:
-				font = ImageFont.truetype(os.path.join(EXTRA_DIR,"Roboto-Bold.ttf"), size)
+				font = ImageFont.truetype(os.path.join(EXTRA_DIR,"Roboto-Bold_NotoEmoji-Regular.ttf"), size)
 				x, y, w, h = ImageDraw.Draw(alpha).multiline_textbbox((0, 0), msgtext, font=font, align='center')
 				if w > 2560 or h > 2560:
 					break
