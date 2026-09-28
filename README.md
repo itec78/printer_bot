@@ -5,7 +5,7 @@ This is a fork of [foxo/printer_bot](https://git.foxo.me/foxo/printer_bot) with 
 * Uses `python-telegram-bot` instead of `telethon`
 * Automatic image rotation (`AUTO_ROTATE`) to better fit the printer's aspect ratio
 * Rate limiting on the number of prints per user (`AMOUNT_LIMIT`)
-* New image-editing commands: `invert`, `name`, `text`, `qr`, `police`
+* Image-generating and editing commands: `invert`, `name`, `text`, `qr`, `police`, `ascii`, `ascii2`, `cowsay`
 * Privacy options: optionally delete files after printing (`KEEP_FILES`) and forward prints to the admin (`ADMIN_FORWARD`)
 * Uses a maintained fork of `brother_ql` ([matmair/brother_ql-inventree](https://github.com/matmair/brother_ql-inventree))
 * Pluggable commands: image-generating commands live under `plugins/` and are loaded automatically (see [Plugins](#plugins))
@@ -33,13 +33,18 @@ Be careful of models that don't feature glue! Make sure whatever you buy is a la
 ## Requirements
 
 * Python 3.6+
-* telethon
+* python-telegram-bot
 * PIL (Python Imaging Library) library (Pillow)
 * brother_ql
 
 You can install the requirements by running this command:
 
-`python3 -m pip install -r requirements.txt -r plugins/*/requirements.txt`
+```bash
+python3 -m pip install -r requirements.txt
+for requirements in plugins/*/requirements.txt; do
+  python3 -m pip install -r "$requirements"
+done
+```
 
 This also installs the dependencies of every plugin under `plugins/` (see [Plugins](#plugins) below).
 
@@ -84,6 +89,10 @@ Commands that generate or transform an image (`name`, `text`, `qr`, `police`, `i
 
 ```
 plugins/
+  cowsay/
+    cowsay.py
+    DejaVuSansMono.ttf
+    requirements.txt
   qr/
     qr.py
     requirements.txt
@@ -92,6 +101,17 @@ plugins/
     Hello_my_name_is_sticker.png
     DejaVuSans_NotoEmoji-Regular.ttf
 ```
+
+Available plugin commands include:
+
+* `invert`: invert an image.
+* `name`: add a name sticker to an image.
+* `text`: render text as an image.
+* `qr`: generate a QR code from text.
+* `police`: apply the police effect to an image.
+* `ascii` / `aart`: convert an image to ASCII art.
+* `ascii2` / `aart2`: convert an image to monospace ASCII art.
+* `cowsay` / `cow`: render text using the Python `cowsay` library.
 
 At startup, `bot.py` loads every folder in `plugins/` automatically, so adding a new command doesn't require touching any core code. To add a new plugin:
 
