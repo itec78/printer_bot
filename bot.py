@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import Application, ContextTypes, CommandHandler, MessageHandler, filters
 import logging
+import re
 from os import system
 from time import time
 from PIL import Image
@@ -78,9 +79,13 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 	msgt = msg.text or msg.caption
 	if msgt:
-		msgl = msgt.strip().split(" ", 1)
-		msgcmd = msgl[0].lower()
-		msgtext = "" if len(msgl)<=1 else msgl[1] 
+		match = re.match(r"^\s*(\S+)[ \t]*(.*)$", msgt, re.DOTALL)
+		if match:
+			msgcmd = match.group(1).lower()
+			msgtext = match.group(2)
+		else:
+			msgcmd = msgt.strip().lower()
+			msgtext = ""
 
 		if msgcmd in PLUGINS:
 			imgcmd = PLUGINS[msgcmd]
@@ -88,7 +93,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 				await msg.reply_text(f"{imgcmd.NAME.capitalize()}: no image")
 				return
 			if imgcmd.REQUIRES_TEXT and msgtext == "":
-				await msg.reply_text("Text missing")
+				await msg.reply_text(f"{imgcmd.NAME.capitalize()}: text missing")
 				return
 
 	if not fn and not imgcmd:
