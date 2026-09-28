@@ -133,11 +133,12 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 		img = imgcmd.run(msgtext, img)
 
-		if not fn:
-			fn = os.path.join(CACHE_DIR, f"{imgcmd.NAME}_{hashlib.md5(msgtext.encode()).hexdigest()}.png")
-			img.thumbnail([2560, 2560])
-			img.save(fn, 'PNG')
-			await msg.reply_photo(fn)
+		# Plugins working on an existing file (e.g. invert) have no msgtext to hash
+		key = msgtext if msgtext else os.path.splitext(os.path.basename(fn))[0]
+		fn = os.path.join(CACHE_DIR, f"{imgcmd.NAME}_{hashlib.md5(key.encode()).hexdigest()}.png")
+		img.thumbnail([2560, 2560])
+		img.save(fn, 'PNG')
+		await msg.reply_photo(fn)
 
 
 
