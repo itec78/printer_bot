@@ -3,14 +3,14 @@ from telegram.ext import Application, ContextTypes, CommandHandler, MessageHandl
 import logging
 from os import system
 from time import time
-from PIL import Image, ImageFont, ImageDraw, ImageOps
+from PIL import Image
 from config import *
 import os
 import json
 from datetime import datetime, timedelta
-import qrcode
 import hashlib
 import shutil
+from plugins import load_plugins
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -18,7 +18,9 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 CACHE_DIR = os.path.join(SCRIPT_DIR,"cache")
 PRINT_DIR = os.path.join(SCRIPT_DIR,"print")
-EXTRA_DIR = os.path.join(SCRIPT_DIR,"extra")
+PLUGINS_DIR = os.path.join(SCRIPT_DIR,"plugins")
+
+PLUGINS = load_plugins(PLUGINS_DIR)
 
 print_log = {}
 
@@ -77,33 +79,12 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 		msgcmd = msgl[0].lower()
 		msgtext = "" if len(msgl)<=1 else msgl[1] 
 
-		if msgcmd in ["invert","inverti"]:
-			imgcmd = "invert"
-			if not fn:	
-				await msg.reply_text("Invert: no image")
+		if msgcmd in PLUGINS:
+			imgcmd = PLUGINS[msgcmd]
+			if imgcmd.REQUIRES_IMAGE and not fn:
+				await msg.reply_text(f"{imgcmd.NAME.capitalize()}: no image")
 				return
-		
-		elif msgcmd in ["name","nome"]:
-			imgcmd = "name"
-			if msgtext == "":
-				await msg.reply_text("Text missing")
-				return
-
-		elif msgcmd in ["text","testo"]:
-			imgcmd = "text"
-			if msgtext == "":
-				await msg.reply_text("Text missing")
-				return
-		
-		elif msgcmd in ["qr","qrcode"]:
-			imgcmd = "qr"
-			if msgtext == "":
-				await msg.reply_text("Text missing")
-				return
-
-		elif msgcmd in ["police","polizia"]:
-			imgcmd = "police"
-			if msgtext == "":
+			if imgcmd.REQUIRES_TEXT and msgtext == "":
 				await msg.reply_text("Text missing")
 				return
 
@@ -147,110 +128,10 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 	if imgcmd:
 
-		if imgcmd == "invert":
-			img = ImageOps.invert(img)
-
-		elif imgcmd == "name":
-			margin = 50
-			size = 500 # Font size
-			img = Image.open(os.path.join(EXTRA_DIR,"Hello_my_name_is_sticker.png")).convert("RGBA")
-
-			width, height = img.size 
-			while size > 20:
-				font = ImageFont.truetype(os.path.join(EXTRA_DIR,"DejaVuSans_NotoEmoji-Regular.ttf"), size)
-				textwidth = font.getlength(msgtext)
-				if textwidth <= width-(margin*2):
-					break
-				else:
-					size -= 5
-			x = (width-textwidth)//2
-			# print(size, width, textwidth, x)
-
-			ImageDraw.Draw(img).multiline_text((width/2, height/2 + 100), msgtext, (0,0,0), font=font, anchor="mm", align='center')
-	
-		elif imgcmd == "text":
-			margin = 50
-			ratio = MAX_ASPECT_RATIO
-
-			img = Image.new(size=(100, 100), mode='RGB', color='white')
-			size = 1
-			while True:
-				font = ImageFont.truetype(os.path.join(EXTRA_DIR,"DejaVuSans_NotoEmoji-Regular.ttf"), size)
-				x, y, w, h = ImageDraw.Draw(img).multiline_textbbox((0, 0), msgtext, font=font, align='center')
-				if w > 2560 or h > 2560:
-					break
-				size += int(size * 0.2 + 1)
-			
-			# calc size with margin
-			nw = int(w - x + (margin * 2))
-			nh = int(h - y + (margin * 2))
-			nx = int(margin - x)
-			ny = int(margin - y)
-
-			#calc size with ratio
-			if nw / nh > ratio:
-				nnh = int(nw / ratio)
-				ny = ny + int((nnh - nh) / 2)
-				nh = nnh
-
-			#draw text
-			img = Image.new(size=(nw, nh), mode='RGB', color='white')
-			ImageDraw.Draw(img).multiline_text((nx, ny), msgtext, font=font, fill="black", align='center')
-
-		elif imgcmd == "qr":
-			qr = qrcode.QRCode(
-				error_correction=qrcode.constants.ERROR_CORRECT_H,
-				box_size=50,
-				border=2
-			)
-			qr.add_data(msgtext)
-			qr.make()
-			img = qr.make_image()
-
-		elif imgcmd == "police":
-			margin = 50
-			ratio = MAX_ASPECT_RATIO
-			msgtext = msgtext.upper()
-
-			alpha = Image.new('L', (100, 100), 0)
-			size = 1
-			while True:
-				font = ImageFont.truetype(os.path.join(EXTRA_DIR,"Roboto-Bold_NotoEmoji-Regular.ttf"), size)
-				x, y, w, h = ImageDraw.Draw(alpha).multiline_textbbox((0, 0), msgtext, font=font, align='center')
-				if w > 2560 or h > 2560:
-					break
-				size += int(size * 0.2 + 1)
-
-			# calc size with marginwj2
-			nw = int(w - x + (margin * 2))
-			nh = int(h - y + (margin * 2))
-			nx = int(margin - x)
-			ny = int(margin - y)
-
-			#calc size with ratio
-			if nw / nh > ratio:
-				nnh = int(nw / ratio)
-				ny = ny + int((nnh - nh) / 2)
-				nh = nnh
-				
-			#draw text
-			alpha = Image.new('L', (nw, nh), 0)
-			ImageDraw.Draw(alpha).multiline_text((nx, ny), msgtext, font=font, fill="white", align='center')
-
-			#crop and invert
-			inv = ImageOps.invert(alpha.crop((0, int(nh / 2), nw, nh)))
-			alpha.paste(inv, (0, int(nh / 2)))
-
-			#apply alpha channel
-			img = Image.new('RGBA', (nw, nh), (99, 151, 208))
-			img.putalpha(alpha)
-
-			#white background
-			white_bg = Image.new("RGBA", img.size, "white")
-			img = Image.alpha_composite(white_bg, img)
+		img = imgcmd.run(msgtext, img)
 
 		if not fn:
-			fn = os.path.join(CACHE_DIR, f"{imgcmd}_{hashlib.md5(msgtext.encode()).hexdigest()}.png")
+			fn = os.path.join(CACHE_DIR, f"{imgcmd.NAME}_{hashlib.md5(msgtext.encode()).hexdigest()}.png")
 			img.thumbnail([2560, 2560])
 			img.save(fn, 'PNG')
 			await msg.reply_photo(fn)
