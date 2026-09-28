@@ -22,7 +22,7 @@ KEEP_FILES = False # Keep files after print
 ADMIN_FORWARD = True # Forward media to Admin
 
 # Remember to add your user to the "lp" group or this won't work!
-PRINT_COMMAND = "brother_ql -m QL-700 -b linux_kernel -p file:///dev/usb/lp0 print -l 62 [IMAGE_PATH] -d"
+PRINT_COMMAND = "brother_ql -m QL-700 -b linux_kernel -p file:///dev/usb/lp0 print -l 62 {IMAGE_PATH} -d"
 PRINT_SUCCESS_COMMAND = None # "mpv --no-video success.wav" - this was used to play audio
 
 # Resize and process settings
