@@ -45,6 +45,8 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 	msg = update.message
+	if msg is None:
+		return
 
 	if PASSWORD:
 		# This one triggers on a single message with the pin code written
@@ -64,6 +66,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 	fn = None
 	imgcmd = None
 	msgtext = ""
+	img = None
 
 	if msg.photo:
 		fid = msg.photo[-1].file_id
