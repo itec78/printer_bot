@@ -1,18 +1,18 @@
 # Telegram Sticker Printer Bot
 
+This is a fork of [foxo/printer_bot](https://git.foxo.me/foxo/printer_bot) with a few improvements:
+
+* Uses `python-telegram-bot` instead of `telethon`
+* Automatic image rotation (`AUTO_ROTATE`) to better fit the printer's aspect ratio
+* Rate limiting on the number of prints per user (`AMOUNT_LIMIT`)
+* New image-editing commands: `invert`, `name`, `text`, `qr`, `police`
+* Privacy options: optionally delete files after printing (`KEEP_FILES`) and forward prints to the admin (`ADMIN_FORWARD`)
+* Uses a maintained fork of `brother_ql` ([matmair/brother_ql-inventree](https://github.com/matmair/brother_ql-inventree))
+* Pluggable commands: image-generating commands live under `plugins/` and are loaded automatically (see [Plugins](#plugins))
+
 This Python script implements a Telegram bot that can print images and stickers sent by users. The bot supports resizing images, converting them to grayscale, and applying gamma correction before printing to ensure maximum quality.
 
 Currently, you can set any command to print your sticker (by default brother_ql is used to print). You can use any external program you want to print to other brands and models of printers.
-
-## As seen on
-* [Furizon Riots & Beyond (2022-23)](https://furizon.net)
-* [GPN21 (2023)](https://entropia.de/GPN21)
-* [MCH2022](https://mch2022.org)
-* [BornHack (2023)](https://bornhack.dk/bornhack-2023)
-* [Chaos Communication Camp (2023)](https://events.ccc.de/camp/2023/infos/index.html)
-* [37th Chaos Communication Congress (2023)](https://events.ccc.de/congress/2023/infos/startpage.html)
-
-**Running it at your con? Add it with a pull request! :D**
 
 ## Tested printers
 
@@ -39,7 +39,9 @@ Be careful of models that don't feature glue! Make sure whatever you buy is a la
 
 You can install the requirements by running this command:
 
-`python3 -m pip install -r requirements.txt`
+`python3 -m pip install -r requirements.txt -r plugins/*/requirements.txt`
+
+This also installs the dependencies of every plugin under `plugins/` (see [Plugins](#plugins) below).
 
 If this is the first time running the script and your printer uses the `lp` protocol, remember to add your user to the `lp` group using the following command:
 
@@ -75,6 +77,33 @@ Once the bot is running, it will respond to specific commands:
 * Resizing images to the correct printer resolution for maximum crispness
 * Conversion to greyscale with gamma adjustment (improves images a lot!)
 * Ratio limit to prevent excessively long stickers from being printed
+
+## Plugins
+
+Commands that generate or transform an image (`name`, `text`, `qr`, `police`, `invert`, ...) are implemented as plugins under `plugins/`. Each plugin lives in its own folder together with any asset it needs (fonts, images, its own `requirements.txt`, etc.):
+
+```
+plugins/
+  qr/
+    qr.py
+    requirements.txt
+  name/
+    name.py
+    Hello_my_name_is_sticker.png
+    DejaVuSans_NotoEmoji-Regular.ttf
+```
+
+At startup, `bot.py` loads every folder in `plugins/` automatically, so adding a new command doesn't require touching any core code. To add a new plugin:
+
+1. Create a new folder under `plugins/`, e.g. `plugins/mycommand/`.
+2. Add a Python file in it (matching the folder name if the folder contains more than one `.py` file) that defines:
+   * `NAME`: the plugin's display name, used for cache filenames and error messages.
+   * `COMMANDS`: a list of command aliases that trigger the plugin (e.g. `["qr", "qrcode"]`).
+   * `REQUIRES_TEXT`: whether the command needs text after it (e.g. `/qr some text`).
+   * `REQUIRES_IMAGE`: whether the command needs an image/sticker already attached to the message.
+   * `run(msgtext, img)`: returns the resulting `PIL.Image`.
+3. Put any asset the plugin needs (fonts, images) in the same folder, and resolve them relative to the file, e.g. `os.path.dirname(os.path.abspath(__file__))`.
+4. If the plugin needs extra Python packages, add them to a `requirements.txt` in the plugin folder.
 
 ## Important Notes
 

@@ -165,3 +165,4 @@ config.py
 cache/
 print/
 limit.json
+.vscode/
