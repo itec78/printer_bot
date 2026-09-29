@@ -1,6 +1,6 @@
 python-telegram-bot
 Pillow
-git+https://github.com/matmair/brother_ql-inventree.git
+git+https://github.com/pklaus/brother_ql.git
 
 # Install plugin-specific dependencies separately, e.g.:
 # pip install -r requirements.txt -r plugins/*/requirements.txt
