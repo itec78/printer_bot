@@ -64,9 +64,15 @@ Before running the script, you need to set up the configuration parameters. You 
 
 ## Usage
 
-After setting up the configuration file, you can just run the bot by using the command
+After setting up the configuration file, update the code and dependencies with:
 
-`python bot.py`
+`./update.sh`
+
+Then start the bot with:
+
+`./start.sh`
+
+The update script pulls the latest code, creates and activates the virtual environment if needed, and installs all requirements into it. The startup script activates the virtual environment and runs the bot. To run the bot manually from an already configured environment, use `python bot.py`.
 
 Once the bot is running, it will respond to specific commands:
 
